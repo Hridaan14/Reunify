@@ -80,27 +80,27 @@
     <!-- Upload Grid -->
     <div id="uploadSection" class="w-full grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
       <!-- Child Upload -->
-      <div id="childUpload" class="relative group cursor-pointer rounded-[2rem] border-2 border-dashed border-white/20 hover:border-brand-green/50 hover:bg-white/10 transition-all duration-300 overflow-hidden aspect-[4/3] flex flex-col items-center justify-center bg-white/5">
+      <div id="childUpload" tabindex="0" class="relative group cursor-pointer rounded-[2rem] border-2 border-dashed border-white/20 hover:border-brand-green/50 hover:bg-white/10 focus:outline-none focus:border-brand-green focus:bg-white/10 transition-all duration-300 overflow-hidden aspect-[4/3] flex flex-col items-center justify-center bg-white/5">
         <input type="file" id="childInput" accept="image/*" class="hidden">
         <div id="childPlaceholder" class="flex flex-col items-center text-white/50 group-hover:text-white/90 transition-colors">
           <div class="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-xl">
             <i data-lucide="image" class="w-10 h-10"></i>
           </div>
-          <span class="font-display font-semibold text-lg">Upload Child Photo</span>
-          <span class="text-sm mt-2 opacity-60">JPEG, PNG up to 5MB</span>
+          <span class="font-display font-semibold text-lg text-center px-4">Upload or Paste Child Photo</span>
+          <span class="text-sm mt-2 opacity-60 text-center px-4">Click to browse or Ctrl+V to paste</span>
         </div>
         <img id="childPreview" class="hidden absolute inset-0 w-full h-full object-cover">
       </div>
 
       <!-- Adult Upload -->
-      <div id="adultUpload" class="relative group cursor-pointer rounded-[2rem] border-2 border-dashed border-white/20 hover:border-brand-blue/50 hover:bg-white/10 transition-all duration-300 overflow-hidden aspect-[4/3] flex flex-col items-center justify-center bg-white/5">
+      <div id="adultUpload" tabindex="0" class="relative group cursor-pointer rounded-[2rem] border-2 border-dashed border-white/20 hover:border-brand-blue/50 hover:bg-white/10 focus:outline-none focus:border-brand-blue focus:bg-white/10 transition-all duration-300 overflow-hidden aspect-[4/3] flex flex-col items-center justify-center bg-white/5">
         <input type="file" id="adultInput" accept="image/*" class="hidden">
         <div id="adultPlaceholder" class="flex flex-col items-center text-white/50 group-hover:text-white/90 transition-colors">
           <div class="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-xl">
             <i data-lucide="image" class="w-10 h-10"></i>
           </div>
-          <span class="font-display font-semibold text-lg">Upload Adult Photo</span>
-          <span class="text-sm mt-2 opacity-60">JPEG, PNG up to 5MB</span>
+          <span class="font-display font-semibold text-lg text-center px-4">Upload or Paste Adult Photo</span>
+          <span class="text-sm mt-2 opacity-60 text-center px-4">Click to browse or Ctrl+V to paste</span>
         </div>
         <img id="adultPreview" class="hidden absolute inset-0 w-full h-full object-cover">
       </div>
@@ -254,6 +254,25 @@
         generateBtnBg.classList.remove('hidden');
       }
     };
+
+    // ---------------------------------------------------------
+    // Paste from Clipboard Logic
+    // ---------------------------------------------------------
+    const handlePaste = (e, type) => {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      for (let index in items) {
+        const item = items[index];
+        if (item.kind === 'file' && item.type.includes('image/')) {
+          const file = item.getAsFile();
+          handleFile(file, type);
+          e.preventDefault();
+          break;
+        }
+      }
+    };
+
+    childUpload.addEventListener('paste', (e) => handlePaste(e, 'child'));
+    adultUpload.addEventListener('paste', (e) => handlePaste(e, 'adult'));
 
     // ---------------------------------------------------------
     // AI Generation Logic
