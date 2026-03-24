@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Re-Unify</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              blue: '#0026BC',
+              green: '#5CF205',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    body { background-color: #050505; color: white; }
+    .gradient-text {
+      background: linear-gradient(to right, #0026BC, #2E8C60, #5CF205);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+    .gradient-bg {
+      background: linear-gradient(to bottom right, #0026BC, #5CF205);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-brand-green selection:text-black">
+  
+  <!-- API Key Modal (Only shows if running locally without key) -->
+  <div id="apiKeySection" class="hidden bg-red-500/10 border-b border-red-500/20 p-4 flex justify-center items-center gap-4 flex-wrap">
+    <span class="text-red-400 text-sm font-medium">Running locally? Enter your Gemini API Key:</span>
+    <input type="password" id="apiKeyInput" class="bg-black/50 border border-white/20 rounded px-3 py-1 text-sm outline-none focus:border-brand-green w-64" placeholder="AIzaSy...">
+    <button id="saveKeyBtn" class="bg-white/10 hover:bg-white/20 px-4 py-1 rounded text-sm transition font-medium">Save to Browser</button>
+  </div>
+
+  <!-- Header -->
+  <header class="w-full p-6 flex items-center justify-between border-b border-white/10">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-[0_0_20px_rgba(92,242,5,0.3)]">
+        <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+      </div>
+      <h1 class="text-2xl font-display font-bold tracking-tight">Re-Unify</h1>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 w-full max-w-5xl mx-auto px-6 py-12 flex flex-col items-center justify-center">
+    <div class="text-center mb-16 max-w-4xl">
+      <h2 class="text-6xl md:text-8xl font-display font-extrabold tracking-normal mb-6 leading-[0.9]">
+        Meet your <br/>
+        <span class="gradient-text">younger self.</span>
+      </h2>
+      <p class="text-lg md:text-xl text-white/60 max-w-2xl mx-auto mt-8">
+        Upload a photo of you as a child and a recent photo. Our AI will generate a beautiful, natural image of you hugging your younger self.
+      </p>
+    </div>
+
+    <!-- Upload Grid -->
+    <div id="uploadSection" class="w-full grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+      <!-- Child Upload -->
+      <div id="childUpload" class="relative group cursor-pointer rounded-[2rem] border-2 border-dashed border-white/20 hover:border-brand-green/50 hover:bg-white/10 transition-all duration-300 overflow-hidden aspect-[4/3] flex flex-col items-center justify-center bg-white/5">
+        <input type="file" id="childInput" accept="image/*" class="hidden">
+        <div id="childPlaceholder" class="flex flex-col items-center text-white/50 group-hover:text-white/90 transition-colors">
+          <div class="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-xl">
+            <i data-lucide="image" class="w-10 h-10"></i>
+          </div>
+          <span class="font-display font-semibold text-lg">Upload Child Photo</span>
+          <span class="text-sm mt-2 opacity-60">JPEG, PNG up to 5MB</span>
+        </div>
+        <img id="childPreview" class="hidden absolute inset-0 w-full h-full object-cover">
+      </div>
+
+      <!-- Adult Upload -->
+      <div id="adultUpload" class="relative group cursor-pointer rounded-[2rem] border-2 border-dashed border-white/20 hover:border-brand-blue/50 hover:bg-white/10 transition-all duration-300 overflow-hidden aspect-[4/3] flex flex-col items-center justify-center bg-white/5">
+        <input type="file" id="adultInput" accept="image/*" class="hidden">
+        <div id="adultPlaceholder" class="flex flex-col items-center text-white/50 group-hover:text-white/90 transition-colors">
+          <div class="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-xl">
+            <i data-lucide="image" class="w-10 h-10"></i>
+          </div>
+          <span class="font-display font-semibold text-lg">Upload Adult Photo</span>
+          <span class="text-sm mt-2 opacity-60">JPEG, PNG up to 5MB</span>
+        </div>
+        <img id="adultPreview" class="hidden absolute inset-0 w-full h-full object-cover">
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div id="errorMsg" class="hidden mb-8 px-6 py-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl text-center max-w-lg w-full"></div>
+
+    <!-- Generate Button -->
+    <button id="generateBtn" disabled class="relative overflow-hidden group px-10 py-5 rounded-full font-display font-bold text-xl tracking-wide transition-all duration-300 bg-white/5 text-white/30 cursor-not-allowed border border-white/10">
+      <div id="generateBtnBg" class="hidden absolute inset-0 bg-gradient-to-r from-[#0026BC] to-[#5CF205] opacity-90 group-hover:opacity-100 transition-opacity"></div>
+      <div class="relative flex items-center gap-3">
+        <i data-lucide="sparkles" id="generateIcon" class="w-6 h-6"></i>
+        <span id="generateText">Re-Unify Now</span>
+      </div>
+    </button>
+
+    <!-- Result Section -->
+    <div id="resultSection" class="hidden w-full max-w-4xl flex-col items-center">
+      <div class="relative w-full rounded-[2rem] overflow-hidden shadow-[0_20px_80px_rgba(0,38,188,0.3)] border border-white/10 bg-white/5">
+        <img id="resultImage" class="w-full h-auto object-contain">
+        <div class="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex justify-end">
+          <button id="downloadBtn" class="bg-white text-black px-8 py-4 rounded-full font-display font-bold text-lg flex items-center gap-3 hover:scale-105 transition-transform shadow-2xl">
+            <i data-lucide="download" class="w-6 h-6"></i> Save Image
+          </button>
+        </div>
+      </div>
+      <button id="resetBtn" class="mt-10 text-white/50 hover:text-white flex items-center gap-2 font-medium transition-colors text-lg">
+        <i data-lucide="refresh-cw" class="w-5 h-5"></i> Start Over
+      </button>
+    </div>
+  </main>
+
+  <!-- Application Logic -->
+  <script type="module">
+    import { GoogleGenAI } from 'https://esm.sh/@google/genai';
+
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // ---------------------------------------------------------
+    // API Key Handling (Safe for GitHub)
+    // ---------------------------------------------------------
+    let apiKey = "";
+    try {
+      // In AI Studio, the build system replaces this with your actual key.
+      // If you download this file, it will literally say "process.env.GEMINI_API_KEY"
+      // which throws an error, falling back to the catch block!
+      apiKey = process.env.GEMINI_API_KEY;
+    } catch (e) {
+      // Running locally: try to get it from localStorage
+      apiKey = localStorage.getItem('GEMINI_API_KEY') || "";
+    }
+
+    const apiKeySection = document.getElementById('apiKeySection');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const saveKeyBtn = document.getElementById('saveKeyBtn');
+
+    // Show the API key input if we don't have one
+    if (!apiKey || apiKey === "undefined") {
+      apiKeySection.classList.remove('hidden');
+    }
+
+    saveKeyBtn.addEventListener('click', () => {
+      const key = apiKeyInput.value.trim();
+      if (key) {
+        localStorage.setItem('GEMINI_API_KEY', key);
+        apiKey = key;
+        apiKeySection.classList.add('hidden');
+        alert('API Key saved to your browser! You can now generate images.');
+      }
+    });
+
+    // ---------------------------------------------------------
+    // App State & Elements
+    // ---------------------------------------------------------
+    let childData = null;
+    let adultData = null;
+
+    const childUpload = document.getElementById('childUpload');
+    const childInput = document.getElementById('childInput');
+    const childPreview = document.getElementById('childPreview');
+    const childPlaceholder = document.getElementById('childPlaceholder');
+
+    const adultUpload = document.getElementById('adultUpload');
+    const adultInput = document.getElementById('adultInput');
+    const adultPreview = document.getElementById('adultPreview');
+    const adultPlaceholder = document.getElementById('adultPlaceholder');
+
+    const generateBtn = document.getElementById('generateBtn');
+    const generateBtnBg = document.getElementById('generateBtnBg');
+    const generateText = document.getElementById('generateText');
+    const generateIcon = document.getElementById('generateIcon');
+    
+    const errorMsg = document.getElementById('errorMsg');
+    const uploadSection = document.getElementById('uploadSection');
+    const resultSection = document.getElementById('resultSection');
+    const resultImage = document.getElementById('resultImage');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // ---------------------------------------------------------
+    // File Upload Logic
+    // ---------------------------------------------------------
+    childUpload.addEventListener('click', () => childInput.click());
+    adultUpload.addEventListener('click', () => adultInput.click());
+
+    const handleFile = (file, type) => {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result.split(',')[1];
+        const data = { url: reader.result, base64, mimeType: file.type };
+        
+        if (type === 'child') {
+          childData = data;
+          childPreview.src = data.url;
+          childPreview.classList.remove('hidden');
+          childPlaceholder.classList.add('hidden');
+          childUpload.classList.remove('border-dashed', 'border-white/20');
+          childUpload.classList.add('border-transparent');
+        } else {
+          adultData = data;
+          adultPreview.src = data.url;
+          adultPreview.classList.remove('hidden');
+          adultPlaceholder.classList.add('hidden');
+          adultUpload.classList.remove('border-dashed', 'border-white/20');
+          adultUpload.classList.add('border-transparent');
+        }
+        
+        checkReady();
+      };
+      reader.readAsDataURL(file);
+    };
+
+    childInput.addEventListener('change', (e) => {
+      handleFile(e.target.files[0], 'child');
+      e.target.value = ''; // Reset input
+    });
+
+    adultInput.addEventListener('change', (e) => {
+      handleFile(e.target.files[0], 'adult');
+      e.target.value = ''; // Reset input
+    });
+
+    const checkReady = () => {
+      if (childData && adultData) {
+        generateBtn.disabled = false;
+        generateBtn.classList.remove('bg-white/5', 'text-white/30', 'cursor-not-allowed', 'border-white/10');
+        generateBtn.classList.add('text-white', 'shadow-[0_0_40px_rgba(92,242,5,0.3)]', 'hover:shadow-[0_0_60px_rgba(92,242,5,0.5)]', 'hover:scale-105', 'border-transparent');
+        generateBtnBg.classList.remove('hidden');
+      }
+    };
+
+    // ---------------------------------------------------------
+    // AI Generation Logic
+    // ---------------------------------------------------------
+    generateBtn.addEventListener('click', async () => {
+      if (!apiKey || apiKey === "undefined") {
+        errorMsg.textContent = "Please enter your Gemini API Key at the top of the screen first.";
+        errorMsg.classList.remove('hidden');
+        window.scrollTo(0,0);
+        return;
+      }
+
+      errorMsg.classList.add('hidden');
+      generateBtn.disabled = true;
+      generateText.textContent = "Generating Magic...";
+      generateIcon.setAttribute('data-lucide', 'refresh-cw');
+      generateIcon.classList.add('animate-spin');
+      lucide.createIcons();
+
+      try {
+        const ai = new GoogleGenAI({ apiKey: apiKey });
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash-image',
+          contents: {
+            parts: [
+              { text: 'Reference image 1 (child):' },
+              { inlineData: { data: childData.base64, mimeType: childData.mimeType } },
+              { text: 'Reference image 2 (adult):' },
+              { inlineData: { data: adultData.base64, mimeType: adultData.mimeType } },
+              { text: 'Generate a realistic photo of the adult from the second image hugging the child from the first image. They should be interacting naturally, looking like two versions of the same person. Soft background, natural lighting. Replace the background with a smooth white one.' }
+            ]
+          }
+        });
+
+        let foundImage = false;
+        for (const part of response.candidates?.[0]?.content?.parts || []) {
+          if (part.inlineData) {
+            const imageUrl = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+            resultImage.src = imageUrl;
+            
+            uploadSection.classList.add('hidden');
+            generateBtn.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+            resultSection.classList.add('flex');
+            
+            foundImage = true;
+            break;
+          }
+        }
+        
+        if (!foundImage) throw new Error("Failed to generate image. Please try again.");
+
+      } catch (err) {
+        console.error(err);
+        errorMsg.textContent = err.message || "An error occurred during generation.";
+        errorMsg.classList.remove('hidden');
+      } finally {
+        generateBtn.disabled = false;
+        generateText.textContent = "Re-Unify Now";
+        generateIcon.setAttribute('data-lucide', 'sparkles');
+        generateIcon.classList.remove('animate-spin');
+        lucide.createIcons();
+      }
+    });
+
+    // ---------------------------------------------------------
+    // Download & Reset Logic
+    // ---------------------------------------------------------
+    downloadBtn.addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = resultImage.src;
+      a.download = 're-unify-result.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      childData = null;
+      adultData = null;
+      
+      childPreview.classList.add('hidden');
+      childPlaceholder.classList.remove('hidden');
+      childUpload.classList.add('border-dashed', 'border-white/20');
+      childUpload.classList.remove('border-transparent');
+      
+      adultPreview.classList.add('hidden');
+      adultPlaceholder.classList.remove('hidden');
+      adultUpload.classList.add('border-dashed', 'border-white/20');
+      adultUpload.classList.remove('border-transparent');
+
+      generateBtn.disabled = true;
+      generateBtn.classList.add('bg-white/5', 'text-white/30', 'cursor-not-allowed', 'border-white/10');
+      generateBtn.classList.remove('text-white', 'shadow-[0_0_40px_rgba(92,242,5,0.3)]', 'hover:shadow-[0_0_60px_rgba(92,242,5,0.5)]', 'hover:scale-105', 'border-transparent');
+      generateBtnBg.classList.add('hidden');
+
+      resultSection.classList.add('hidden');
+      resultSection.classList.remove('flex');
+      uploadSection.classList.remove('hidden');
+      generateBtn.classList.remove('hidden');
+    });
+  </script>
+</body>
+</html>
+
